@@ -38,6 +38,7 @@ case $board in
 	"KV260") echo -e ;;
 	"KR260") echo -e ;;
 	"KD240") echo -e ;;
+	"ZCU102") echo -e ;;
 	*) echo -e $USAGE; exit 0;;
 esac
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -110,14 +111,14 @@ do
 done
 
 # Install Required Debian Packages
-apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 \
-	        --verbose 803DDF595EA7B6644F9B96B752150A179A9E84C9
-echo "deb http://ppa.launchpad.net/ubuntu-xilinx/updates/ubuntu jammy main" > /etc/apt/sources.list.d/xilinx-gstreamer.list
-apt update 
+# apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 \
+#	        --verbose 803DDF595EA7B6644F9B96B752150A179A9E84C9
+# echo "deb http://ppa.launchpad.net/ubuntu-xilinx/updates/ubuntu jammy main" > /etc/apt/sources.list.d/xilinx-gstreamer.list
+# apt update 
 
 apt-get -o DPkg::Lock::Timeout=10 update && \
 apt-get install -y python3.10-venv python3-cffi libssl-dev libcurl4-openssl-dev \
-  portaudio19-dev libcairo2-dev libdrm-xlnx-dev libopencv-dev python3-opencv graphviz i2c-tools \
+  portaudio19-dev libcairo2-dev libdrm-dev libopencv-dev python3-opencv graphviz i2c-tools \
   fswebcam libboost-all-dev python3-dev python3-pip
 
 # Install PYNQ Virtual Environment 
@@ -186,8 +187,8 @@ echo "$BOARD" > /etc/xocl.txt
 pushd dts/
 make
 mkdir -p /usr/local/share/pynq-venv/pynq-dts/
-cp insert_dtbo.py pynq.dtbo /usr/local/share/pynq-venv/pynq-dts/
-echo "python3 /usr/local/share/pynq-venv/pynq-dts/insert_dtbo.py" >> /etc/profile.d/pynq_venv.sh
+# cp insert_dtbo.py pynq.dtbo /usr/local/share/pynq-venv/pynq-dts/
+# echo "python3 /usr/local/share/pynq-venv/pynq-dts/insert_dtbo.py" >> /etc/profile.d/pynq_venv.sh
 
 source /etc/profile.d/pynq_venv.sh
 popd
@@ -202,12 +203,12 @@ if [[ "$board" == "KV260" ]]
 then
 	echo "KV260 notebooks"
 	#Install PYNQ-HelloWorld
-	python3 -m pip install pynq_helloworld --no-build-isolation 
+	python3 -m pip install pynq_helloworld --no-build-isolation # Not necessary
 
 	#Install base overlay
-	python3 -m pip install .
+	python3 -m pip install .  # Not necessary
 	
-	# Install composable overlays
+	# Install composable overlays # Not necessary
 	pushd /tmp
 	rm -rf ./PYNQ_Composable_Pipeline
 	git clone https://github.com/Xilinx/PYNQ_Composable_Pipeline.git -b v1.1.0-dev
@@ -216,11 +217,11 @@ then
 	popd
 
 	# Install Pynq Peripherals
-	python3 -m pip install git+https://github.com/Xilinx/PYNQ_Peripherals.git
+	python3 -m pip install git+https://github.com/Xilinx/PYNQ_Peripherals.git # Not necessary
 
 	# Install DPU-PYNQ
-	yes Y | apt remove --purge vitis-ai-runtime
-	python3 -m pip install pynq-dpu==2.5 --no-build-isolation
+	yes Y | apt remove --purge vitis-ai-runtime # Not necessary
+	python3 -m pip install pynq-dpu==2.5 --no-build-isolation # Not necessary
 fi
 
 if [[ "$board" == "KR260" ]]
@@ -248,22 +249,22 @@ then
 fi
 
 # Deliver all notebooks
-yes Y | pynq-get-notebooks -p $PYNQ_JUPYTER_NOTEBOOKS -f
+# yes Y | pynq-get-notebooks -p $PYNQ_JUPYTER_NOTEBOOKS -f
 
 # Copy additional notebooks from pynq
-cp pynq/pynq/notebooks/common/ -r $PYNQ_JUPYTER_NOTEBOOKS
+# cp pynq/pynq/notebooks/common/ -r $PYNQ_JUPYTER_NOTEBOOKS
 
 # =========================================================
 
 # Patch notebooks
-sed -i "s/\/home\/xilinx\/jupyter_notebooks\/common/\./g" $PYNQ_JUPYTER_NOTEBOOKS/common/python_random.ipynb
-sed -i "s/\/home\/xilinx\/jupyter_notebooks\/common/\./g" $PYNQ_JUPYTER_NOTEBOOKS/common/usb_webcam.ipynb
+# sed -i "s/\/home\/xilinx\/jupyter_notebooks\/common/\./g" $PYNQ_JUPYTER_NOTEBOOKS/common/python_random.ipynb
+# sed -i "s/\/home\/xilinx\/jupyter_notebooks\/common/\./g" $PYNQ_JUPYTER_NOTEBOOKS/common/usb_webcam.ipynb
 
 
-for notebook in $PYNQ_JUPYTER_NOTEBOOKS/common/*.ipynb; do
-    sed -i "s/pynq.overlays.base/kv260/g" $notebook
-    sed -i "s/PMODB/PMODA/g" $notebook
-done
+#for notebook in $PYNQ_JUPYTER_NOTEBOOKS/common/*.ipynb; do
+#    sed -i "s/pynq.overlays.base/kv260/g" $notebook
+#    sed -i "s/PMODB/PMODA/g" $notebook
+#done
 
 if [[ "$board" == "KV260" ]]
 then
@@ -273,8 +274,8 @@ then
 	done
 fi
 
-sed -i 's/Specifically a RALink WiFi dongle commonly used with \\n//g' $PYNQ_JUPYTER_NOTEBOOKS/common/wifi.ipynb
-sed -i 's/Raspberry Pi kits is connected into the board.//g' $PYNQ_JUPYTER_NOTEBOOKS/common/wifi.ipynb
+# sed -i 's/Specifically a RALink WiFi dongle commonly used with \\n//g' $PYNQ_JUPYTER_NOTEBOOKS/common/wifi.ipynb
+# sed -i 's/Raspberry Pi kits is connected into the board.//g' $PYNQ_JUPYTER_NOTEBOOKS/common/wifi.ipynb
 
 # Patch microblaze to use virtualenv libraries
 sed -i "s/opt\/microblaze/usr\/local\/share\/pynq-venv\/bin/g" /usr/local/share/pynq-venv/lib/python3.10/site-packages/pynq/lib/pynqmicroblaze/rpc.py
@@ -296,8 +297,8 @@ fi
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 # Change notebooks folder ownership and permissions
-chown $LOGNAME:$LOGNAME -R $PYNQ_JUPYTER_NOTEBOOKS
-chmod ugo+rw -R $PYNQ_JUPYTER_NOTEBOOKS
+#chown $LOGNAME:$LOGNAME -R $PYNQ_JUPYTER_NOTEBOOKS
+#chmod ugo+rw -R $PYNQ_JUPYTER_NOTEBOOKS
 
 # Start Jupyter services 
 systemctl start jupyter.service
@@ -308,8 +309,8 @@ cp pynq/sdbuild/packages/clear_pl_statefile/clear_pl_statefile.service /lib/syst
 systemctl enable clear_pl_statefile
 
 # OpenCV
-python3 -m pip install opencv-python
-apt-get install ffmpeg libsm6 libxext6 -y
+#python3 -m pip install opencv-python
+#apt-get install ffmpeg libsm6 libxext6 -y
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #    Selftest generation
